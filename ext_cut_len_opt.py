@@ -4,6 +4,7 @@ import pandas as pd
  
 # Function to calculate when Fab = "Y" and coring = "Y"
 def Calculate_fab_Yes_coring_yes_No(total_order, weight_per_meter, cav, Adjusted_Butt_End, Die_type, Fab, coring):
+    
     st.write("Enter Below Input Details")
     fab_cut = st.number_input("Enter fab cut length:", min_value=0.00000,format="%.5f")
     
@@ -69,6 +70,7 @@ def Calculate_fab_Yes_coring_yes_No(total_order, weight_per_meter, cav, Adjusted
                     Total_No_of_Pcs_Mtrs=(Required_extrusion_cutlength/1000)*total_pcs_cut
                     # st.write(f"Total_No_of_Pcs_Mtrs:{Total_No_of_Pcs_Mtrs} total available{total_leng_coring}")
                     Excess_mtrs=total_leng_coring-Total_No_of_Pcs_Mtrs
+                    # Special=(total_Ex_Weight*Billet_size*Total_No_of_Pcs_Mtrs*Recovery)/Excess_mtrs
        
                     # Check if this recovery is the maximum so far
                     if Recovery > max_recovery:
@@ -78,14 +80,15 @@ def Calculate_fab_Yes_coring_yes_No(total_order, weight_per_meter, cav, Adjusted
                         best_cut_length = Required_extrusion_cutlength  # Store the best cut length
                         best_number_of_nose_planned = number_of_nose_planned  # Store the best number of nose planned
                         # st.write(f"best_cut_length{best_cut_length}")
+                    
                    
                     # Collect results for each n
                     results.append({
                         'Billet Length (mm)': n,
-                        'Butt End mm':Adjusted_Butt_End,
-                        'Extrudable Weight Kg':total_Ex_Weight,
-                        'front_end': front_end,
-                        "back_end": back_end,
+                        'Butt End (mm)':Adjusted_Butt_End,
+                        'Extrudable Weight (Kg)':total_Ex_Weight,
+                        'front_end (mtr)': front_end,
+                        "back_end (mtr)": back_end,
                         'Total mtrs':total_Ex_Length,
                         'Tolerance':Tolerance,
                         'Available Mtrs':total_leng_coring,                      
@@ -93,7 +96,8 @@ def Calculate_fab_Yes_coring_yes_No(total_order, weight_per_meter, cav, Adjusted
                         'Total No of Pcs Mtrs':Total_No_of_Pcs_Mtrs,
                         'Cut_length': Required_extrusion_cutlength,  # Store the cut length in results
                         'Excess mtrs':Excess_mtrs,                        
-                        'Recovery': Recovery
+                        'Recovery': Recovery,
+                        # "Special": Special
                     })
            
             elif Die_type == "S":
@@ -117,6 +121,7 @@ def Calculate_fab_Yes_coring_yes_No(total_order, weight_per_meter, cav, Adjusted
                     Total_No_of_Pcs_Mtrs=(Required_extrusion_cutlength/1000)*total_pcs_cut
                     # st.write(f"Total_No_of_Pcs_Mtrs:{Total_No_of_Pcs_Mtrs}")
                     Excess_mtrs=total_leng_coring-Total_No_of_Pcs_Mtrs
+                    # Special=(total_Ex_Weight*Billet_size*Total_No_of_Pcs_Mtrs*Recovery)/Excess_mtrs
        
                     # Check if this recovery is the maximum so far
                     if Recovery > max_recovery:
@@ -140,7 +145,8 @@ def Calculate_fab_Yes_coring_yes_No(total_order, weight_per_meter, cav, Adjusted
                         'Total No of Pcs Mtrs':Total_No_of_Pcs_Mtrs,
                         'Cut_length': Required_extrusion_cutlength,  # Store the cut length in results
                         'Excess mtrs':Excess_mtrs,                        
-                        'Recovery': Recovery
+                        'Recovery': Recovery,
+                        # "Special": Special
                     })
            
             else:
@@ -163,6 +169,8 @@ def Calculate_fab_Yes_coring_yes_No(total_order, weight_per_meter, cav, Adjusted
         # Calculate total length considering front and back end adjustments
         front_end = ((total_Ex_Weight * 0.09) / (weight_per_meter * cav)) + 0.300 if Die_type == "H" else ((total_Ex_Weight * 0.045) / (weight_per_meter * cav)) + 0.300
         back_end = ((total_Ex_Weight * 0.045) / (weight_per_meter * cav)) + 0.300 + ((((50 - Adjusted_Butt_End) * 0.0876) / weight_per_meter) / cav) if Die_type == "H" else ((total_Ex_Weight * 0.09) / (weight_per_meter * cav)) + 0.3 + ((((50 - Adjusted_Butt_End) * 0.0876) / weight_per_meter) / cav)
+        # st.write(f"Front end coring:{front_end:.3f}")
+        # st.write(f"Back end Coring:{back_end:.3f}")
        
         total_leng_coring = total_Ex_Length - (front_end + back_end)
         total_pcs_cut = math.floor(total_leng_coring / (best_cut_length / 1000))  # Use the best cut length for total_pcs_cut
@@ -174,7 +182,10 @@ def Calculate_fab_Yes_coring_yes_No(total_order, weight_per_meter, cav, Adjusted
         Total_input_weight = Total_billet_required * Billet_size * 0.0876
    
         Total_recovery = (Total_output_weight / Total_input_weight) * 100
-   
+
+        Total_No_of_Pcs_Mtrs=(best_cut_length/1000)*total_pcs_cut
+        Excess_mtrs=total_leng_coring-Total_No_of_Pcs_Mtrs
+        # Special=(total_Ex_Weight*Billet_size*Total_No_of_Pcs_Mtrs*Total_recovery)/Excess_mtrs   
         # Create a DataFrame to store all results
         df_results = pd.DataFrame(results)
    
@@ -191,7 +202,9 @@ def Calculate_fab_Yes_coring_yes_No(total_order, weight_per_meter, cav, Adjusted
         "Total Input Weight",
         "Total Output Weight",
         "Total Recovery",
-        "Total Extrudable Length per Billet"
+        "Total Extrudable Length per Billet mtr",
+        "Front end coring mtr",
+        "Back end Coring mtr"
                      ],
         "Value": [
         f"{best_cut_length} mm",
@@ -202,7 +215,9 @@ def Calculate_fab_Yes_coring_yes_No(total_order, weight_per_meter, cav, Adjusted
         f"{Total_input_weight:.2f} kg",
         f"{Total_output_weight:.2f} kg",
         f"{Total_recovery:.2f}%",
-        f"{total_Ex_Length:.3f} Meter"
+        f"{total_Ex_Length:.3f} ",
+        f"{front_end:3f}",
+        f"{back_end:3f} "
             ]
         }
 
@@ -213,6 +228,7 @@ def Calculate_fab_Yes_coring_yes_No(total_order, weight_per_meter, cav, Adjusted
         st.subheader("Best Optimal Results")
         st.write(df)
 
+    
         # st.write(f"Optimal Extrusion cut length:  {best_cut_length} mm")
         # st.write(f"Number fab nose planned in one bar: {best_number_of_nose_planned:.0f} Nose")
         # st.write(f"Maximum Recovery: {max_recovery:.2f}%")
@@ -228,11 +244,39 @@ def Calculate_fab_Yes_coring_yes_No(total_order, weight_per_meter, cav, Adjusted
         Billets = st.selectbox("Select Billet cut length to check recovery for other billets:", best_n_values)
        
         filtered_results = df_results[df_results['Billet Length (mm)'] == Billets]
+
+        def highlight_max_adjust(row):
+            return ['background-color: lightgreen' if row.name == filtered_results["Recovery"].idxmax() else '' for _ in row]
+
+        # Apply the highlighting function and display DataFrame
+        st.write("Results with highlighted row for maximum Adjust value:")
+        st.dataframe(filtered_results.style.apply(highlight_max_adjust, axis=1))
    
-        # Display the filtered results DataFrame
-        st.write("\nResults for selected billet length with fab passible cut_length:")
-        st.dataframe(filtered_results)
-   
+        # # Display the filtered results DataFrame
+        # st.write("\nResults for selected billet length with fab passible cut_length:")
+        # st.dataframe(filtered_results)
+
+        st.write("\nUse when you can adjust coring tolerance less than 0.25 mtr:")
+        df_new=df_results
+        df_new["Adjust"]=(df_new["Excess mtrs"]-(df_new["Cut_length"]/1000))
+        df_new["updated_No_of_pcs_to_plan"]=df_new["No_of_Pcs_to_plan"]+1
+        out_put = df_new["updated_No_of_pcs_to_plan"] * ((df_new["Cut_length"]*cav) / 1000) * weight_per_meter
+        Total_input_weight=df_new["Billet Length (mm)"]*0.0876
+        df_new["Adjusted_recovery"]=(out_put/Total_input_weight)*100
+        best_n_values1 = [580, 650, 725, 830, 965, 1160]
+        Billets1 = st.selectbox("Enter Required billet size:", best_n_values1)
+        # best_cut_length1 = st.selectbox("Select Billet cut length to check recovery for other billets:", [x[1] for x in number_of_nose_planned_list])
+        df_new = df_new[df_new['Billet Length (mm)'] == Billets1]
+        df_new_sort=df_new.sort_values(by="Adjust",ascending=False)
+
+        def highlight_max_adjust(row):
+            return ['background-color: lightgreen' if row.name == df_new_sort["Adjust"].idxmax() else '' for _ in row]
+
+        # Apply the highlighting function and display DataFrame
+        st.write("Results with highlighted row for maximum Adjust value:")
+        st.dataframe(df_new_sort.style.apply(highlight_max_adjust, axis=1))
+
+           
     max_recovery = 0
     best_n = 0
     best_total_pcs_can_cut = 0  # Initialize to keep track of the best total_pcs_can_cut
@@ -350,8 +394,13 @@ def Calculate_fab_Yes_coring_yes_No(total_order, weight_per_meter, cav, Adjusted
             
             Billets = st.number_input("Enter Billet Length (mm):", min_value=500.00,step=5.00,format="%.3f")
             best_results = df_results[(df_results['Billet Length (mm)'] == Billets)]
-            st.write("\nResults for selected billet length with fab passible cut_length:")
-            st.dataframe(best_results)
+            def highlight_max_adjust(row):
+                return ['background-color: lightgreen' if row.name == best_results["Recovery"].idxmax() else '' for _ in row]
+
+            # Apply the highlighting function and display DataFrame
+            st.write("Results with highlighted row for maximum Adjust value:")
+            st.dataframe(best_results.style.apply(highlight_max_adjust, axis=1))
+
    
         else:
             st.write("No valid total_pcs_can_cut found.")
@@ -359,6 +408,7 @@ def Calculate_fab_Yes_coring_yes_No(total_order, weight_per_meter, cav, Adjusted
 
 # Function to calculate when Fab = "Y" and coring = "Y"
 def Calculate_fab_Yes_coring_yes_No_press1(total_order, weight_per_meter, cav, Adjusted_Butt_End, Die_type, Fab, coring):
+   
     st.write("Enter Below Input Details")
     fab_cut = st.number_input("Enter fab cut length:", min_value=0.00000,format="%.5f")
     
@@ -546,7 +596,9 @@ def Calculate_fab_Yes_coring_yes_No_press1(total_order, weight_per_meter, cav, A
         "Total Input Weight",
         "Total Output Weight",
         "Total Recovery",
-        "Total Extrudable Length per Billet"
+        "Total Extrudable Length per Billet mtr",
+        "Front end coring mtr",
+        "Back end coring mtr"
                      ],
         "Value": [
         f"{best_cut_length} mm",
@@ -557,7 +609,9 @@ def Calculate_fab_Yes_coring_yes_No_press1(total_order, weight_per_meter, cav, A
         f"{Total_input_weight:.2f} kg",
         f"{Total_output_weight:.2f} kg",
         f"{Total_recovery:.2f}%",
-        f"{total_Ex_Length:.3f} Meter"
+        f"{total_Ex_Length:.3f}",
+        f"{front_end:.3f}",
+        f"{back_end:.3f}"
             ]
         }
 
@@ -583,10 +637,35 @@ def Calculate_fab_Yes_coring_yes_No_press1(total_order, weight_per_meter, cav, A
         Billets = st.selectbox("Select Billet cut length to check recovery for other billets:", best_n_values)
        
         filtered_results = df_results[df_results['Billet Length (mm)'] == Billets]
+        def highlight_max_adjust(row):
+            return ['background-color: lightgreen' if row.name == filtered_results["Recovery"].idxmax() else '' for _ in row]
+
+        # Apply the highlighting function and display DataFrame
+        st.write("Results with highlighted row for maximum Adjust value:")
+        st.dataframe(filtered_results.style.apply(highlight_max_adjust, axis=1))
    
-        # Display the filtered results DataFrame
-        st.write("\nResults for selected billet length with fab passible cut_length:")
-        st.dataframe(filtered_results)
+        
+
+        
+        st.write("\nUse when you can adjust coring tolerance less than 0.25 mtr:")
+        df_new=df_results
+        df_new["Adjust"]=(df_new["Excess mtrs"]-(df_new["Cut_length"]/1000))
+        df_new["updated_No_of_pcs_to_plan"]=df_new["No_of_Pcs_to_plan"]+1
+        out_put = df_new["updated_No_of_pcs_to_plan"] * ((df_new["Cut_length"]*cav) / 1000) * weight_per_meter
+        Total_input_weight=df_new["Billet Length (mm)"]*0.0876
+        df_new["Adjusted_recovery"]=(out_put/Total_input_weight)*100
+        best_n_values1 = [580, 650, 725, 830, 965, 1160]
+        Billets1 = st.selectbox("Enter Required billet size:", best_n_values1)
+        # best_cut_length1 = st.selectbox("Select Billet cut length to check recovery for other billets:", [x[1] for x in number_of_nose_planned_list])
+        df_new = df_new[df_new['Billet Length (mm)'] == Billets1]
+        df_new_sort=df_new.sort_values(by="Adjust",ascending=False)
+
+        def highlight_max_adjust(row):
+            return ['background-color: lightgreen' if row.name == df_new_sort["Adjust"].idxmax() else '' for _ in row]
+
+        # Apply the highlighting function and display DataFrame
+        st.write("Results with highlighted row for maximum Adjust value:")
+        st.dataframe(df_new_sort.style.apply(highlight_max_adjust, axis=1))
    
     max_recovery = 0
     best_n = 0
@@ -705,8 +784,13 @@ def Calculate_fab_Yes_coring_yes_No_press1(total_order, weight_per_meter, cav, A
             
             Billets = st.number_input("Enter Billet Length (mm):", min_value=500.00,step=5.00,format="%.3f")
             best_results = df_results[(df_results['Billet Length (mm)'] == Billets)]
-            st.write("\nResults for selected billet length with fab passible cut_length:")
-            st.dataframe(best_results)
+            def highlight_max_adjust(row):
+                return ['background-color: lightgreen' if row.name == best_results["Recovery"].idxmax() else '' for _ in row]
+
+            # Apply the highlighting function and display DataFrame
+            st.write("Results with highlighted row for maximum Adjust value:")
+            st.dataframe(best_results.style.apply(highlight_max_adjust, axis=1))
+   
    
         else:
             st.write("No valid total_pcs_can_cut found.")
@@ -855,7 +939,9 @@ def calculate_recovery_Fab_No_coring_Yes_No(Die_Number, weight_per_meter, cav, c
                 "Total Input Weight",
                 "Total Output Weight",
                 "Total Recovery",
-                "Total Extrudable Length per Billet"
+                "Total Extrudable Length per Billet mtr",
+                "Front end coring mtr",
+                "Back end coring mtr"
                      ],
                 "Value": [
                 
@@ -865,7 +951,9 @@ def calculate_recovery_Fab_No_coring_Yes_No(Die_Number, weight_per_meter, cav, c
                 f"{Total_input_weight:.2f} kg",
                 f"{Total_output_weight:.2f} kg",
                 f"{Total_recovery:.2f}%",
-                f"{total_Ex_Length:.3f} Meter"
+                f"{total_Ex_Length:.3f} Meter",
+                f"{front_end:.3f}",
+                f"{back_end:.3f}"
                     ]
                 }
 
@@ -883,10 +971,37 @@ def calculate_recovery_Fab_No_coring_Yes_No(Die_Number, weight_per_meter, cav, c
                 # st.write(f"Total Recovery: {Total_recovery:.3f}%")
        
                 st.subheader("Results for each Billet")
-                st.write(df_results)
+
+                def highlight_max_adjust(row):
+                    return ['background-color: lightgreen' if row.name == df_results["Recovery"].idxmax() else '' for _ in row]
+
+                # Apply the highlighting function and display DataFrame
+                st.write("Results with highlighted row for maximum Adjust value:")
+                st.dataframe(df_results.style.apply(highlight_max_adjust, axis=1))
+
+                
+
+                st.write("\nUse when you can adjust coring tolerance less than 0.25 mtr:")
+                df_new=df_results
+                df_new["Adjust"]=(df_new["Excess mtrs"]-(df_new["Cut_length"]/1000))
+                df_new["updated_No_of_pcs_to_plan"]=df_new["No_of_Pcs_to_plan"]+1
+                out_put = df_new["updated_No_of_pcs_to_plan"] * ((df_new["Cut_length"]*cav) / 1000) * weight_per_meter
+                Total_input_weight=df_new["Billet Length (mm)"]*0.0876
+                df_new["Adjusted_recovery"]=(out_put/Total_input_weight)*100
+                # df_new = df_new[df_new['Cut_length'] == best_cut_length]
+                df_new_sort=df_new.sort_values(by="Adjust",ascending=False)
+
+                def highlight_max_adjust(row):
+                    return ['background-color: lightgreen' if row.name == df_new_sort["Adjust"].idxmax() else '' for _ in row]
+
+                # Apply the highlighting function and display DataFrame
+                st.write("Results with highlighted row for maximum Adjust value:")
+                st.dataframe(df_new_sort.style.apply(highlight_max_adjust, axis=1))
+
+
+                
        
-            else:
-                st.warning("No valid total_pcs_can_cut found.")
+            
        
         elif coring == "N":
             Stretch_Allowance = st.number_input("Enter Stretch_Allowance if no coring (mtr):", min_value=0.001, step=0.001, format="%.5f")
@@ -917,14 +1032,14 @@ def calculate_recovery_Fab_No_coring_Yes_No(Die_Number, weight_per_meter, cav, c
                 # Collect results for each n
                 results.append({
                     'Billet Length (mm)': n,
-                    'Butt End mm':Adjusted_Butt_End,
-                    'Extrudable Weight Kg':total_Ex_Weight,
-                    'Total mtrs':total_Ex_Length,             
+                    'Butt End mm':f"{Adjusted_Butt_End:.2f}",
+                    'Extrudable Weight Kg':f"{total_Ex_Weight:.2f}",
+                    'Total mtrs':f"{total_Ex_Length:.2f}",             
                     'No_of_Pcs_to_plan': total_pcs_can_cut,
-                    'Total No of Pcs Mtrs':Total_No_of_Pcs_Mtrs,
-                    'Cut_length': Required_extrusion_cutlength,  # Store the cut length in results
-                    'Excess mtrs':Excess_mtrs,                        
-                    'Recovery': Recovery
+                    'Total No of Pcs Mtrs':f"{Total_No_of_Pcs_Mtrs:.2f}",
+                    'Cut_length': f"{Required_extrusion_cutlength:.2f}",  # Store the cut length in results
+                    'Excess mtrs':f"{Excess_mtrs:.2f}",                        
+                    'Recovery': f"{Recovery:.2f} %"
                 })
        
             # After finding the best_n and corresponding max_recovery, use them to calculate Total_billet_required
@@ -986,7 +1101,13 @@ def calculate_recovery_Fab_No_coring_Yes_No(Die_Number, weight_per_meter, cav, c
                 Billets = st.number_input("Enter Billet Length (mm):", min_value=500.00,step=5.00,format="%.3f")
                 df_results = df_results[(df_results['Billet Length (mm)'] == Billets)]
                 st.write("\nResults for selected billet length with fab passible cut_length:")
-                st.write(df_results)
+                def highlight_lowest_adjust(row):
+                    return ['background-color: lightgreen' if val == df_results["Recovery"].max() else '' for val in row]
+
+                # Apply the highlighting function and display DataFrame
+                
+                st.dataframe(df_results.style.apply(highlight_lowest_adjust, axis=1))
+                
        
             else:
                 st.warning("No valid total_pcs_can_cut found.")
@@ -1139,7 +1260,9 @@ def calculate_recovery_Fab_No_coring_Yes_No_press1(Die_Number, weight_per_meter,
                 "Total Input Weight",
                 "Total Output Weight",
                 "Total Recovery",
-                "Total Extrudable Length per Billet"
+                "Total Extrudable Length per Billet mtr",
+                "Front end coring mtr",
+                "Back end coring mtr"
                      ],
                 "Value": [
                 
@@ -1149,7 +1272,9 @@ def calculate_recovery_Fab_No_coring_Yes_No_press1(Die_Number, weight_per_meter,
                 f"{Total_input_weight:.2f} kg",
                 f"{Total_output_weight:.2f} kg",
                 f"{Total_recovery:.2f}%",
-                f"{total_Ex_Length:.3f} Meter"
+                f"{total_Ex_Length:.3f}",
+                f"{front_end:.3f}",
+                f"{back_end:.3f}"
                     ]
                 }
 
@@ -1167,10 +1292,33 @@ def calculate_recovery_Fab_No_coring_Yes_No_press1(Die_Number, weight_per_meter,
                 # st.write(f"Total Recovery: {Total_recovery:.3f}%")
        
                 st.subheader("Results for each Billet")
-                st.write(df_results)
+
+                def highlight_max_adjust(row):
+                    return ['background-color: lightgreen' if row.name == df_results["Recovery"].idxmax() else '' for _ in row]
+
+                # Apply the highlighting function and display DataFrame
+                st.write("Results with highlighted row for maximum Adjust value:")
+                st.dataframe(df_results.style.apply(highlight_max_adjust, axis=1))
+                
+
+                st.write("\nUse when you can adjust coring tolerance less than 0.25 mtr:")
+                df_new=df_results
+                df_new["Adjust"]=(df_new["Excess mtrs"]-(df_new["Cut_length"]/1000))
+                df_new["updated_No_of_pcs_to_plan"]=df_new["No_of_Pcs_to_plan"]+1
+                out_put = df_new["updated_No_of_pcs_to_plan"] * ((df_new["Cut_length"]*cav) / 1000) * weight_per_meter
+                Total_input_weight=df_new["Billet Length (mm)"]*0.0876
+                df_new["Adjusted_recovery"]=(out_put/Total_input_weight)*100
+                # df_new = df_new[df_new['Cut_length'] == best_cut_length]
+                df_new_sort=df_new.sort_values(by="Adjust",ascending=False)
+
+                def highlight_max_adjust(row):
+                    return ['background-color: lightgreen' if row.name == df_new_sort["Adjust"].idxmax() else '' for _ in row]
+
+                # Apply the highlighting function and display DataFrame
+                st.write("Results with highlighted row for maximum Adjust value:")
+                st.dataframe(df_new_sort.style.apply(highlight_max_adjust, axis=1))
        
-            else:
-                st.warning("No valid total_pcs_can_cut found.")
+            
        
         elif coring == "N":
             Stretch_Allowance = st.number_input("Enter Stretch_Allowance if no coring (mtr):", min_value=0.001, step=0.001, format="%.5f")
@@ -1201,14 +1349,14 @@ def calculate_recovery_Fab_No_coring_Yes_No_press1(Die_Number, weight_per_meter,
                 # Collect results for each n
                 results.append({
                     'Billet Length (mm)': n,
-                    'Butt End mm':Adjusted_Butt_End,
-                    'Extrudable Weight Kg':total_Ex_Weight,
-                    'Total mtrs':total_Ex_Length,             
+                    'Butt End mm':f"{Adjusted_Butt_End:.2f}",
+                    'Extrudable Weight Kg':f"{total_Ex_Weight:.2f}",
+                    'Total mtrs':f"{total_Ex_Length:.2f}",             
                     'No_of_Pcs_to_plan': total_pcs_can_cut,
-                    'Total No of Pcs Mtrs':Total_No_of_Pcs_Mtrs,
-                    'Cut_length': Required_extrusion_cutlength,  # Store the cut length in results
-                    'Excess mtrs':Excess_mtrs,                        
-                    'Recovery': Recovery
+                    'Total No of Pcs Mtrs':f"{Total_No_of_Pcs_Mtrs:.2f}",
+                    'Cut_length': f"{Required_extrusion_cutlength:.2f}",  # Store the cut length in results
+                    'Excess mtrs':f"{Excess_mtrs:.2f}",                        
+                    'Recovery': f"{Recovery:.2f} %"
                 })
        
             # After finding the best_n and corresponding max_recovery, use them to calculate Total_billet_required
@@ -1270,7 +1418,14 @@ def calculate_recovery_Fab_No_coring_Yes_No_press1(Die_Number, weight_per_meter,
                 Billets = st.number_input("Enter Billet Length (mm):", min_value=500.00,step=5.00,format="%.3f")
                 df_results = df_results[(df_results['Billet Length (mm)'] == Billets)]
                 st.write("\nResults for selected billet length with fab passible cut_length:")
-                st.write(df_results)
+                
+                def highlight_lowest_adjust(row):
+                    return ['background-color: lightgreen' if val == df_results["Recovery"].max() else '' for val in row]
+
+                # Apply the highlighting function and display DataFrame
+                
+                st.dataframe(df_results.style.apply(highlight_lowest_adjust, axis=1))
+                
        
             else:
                 st.warning("No valid total_pcs_can_cut found.")
